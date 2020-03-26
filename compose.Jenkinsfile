@@ -1,42 +1,46 @@
-        /* This pipeline creates a docker compose and then executes all the scripts. Note the Jenkins has to be in Linux environment */
+/* This pipeline creates a docker compose and then executes all the scripts. Note the Jenkins has to be in Linux environment */
 node {
-    def app
-
+    
+    label 'Linux'
+    
+    /* Cloning the git branch*/
     stage('Clone repository') {
-
-        checkout scm
+            checkout scm
     }
-	
-    stage('Start docker-compose') {
-		/* Start docker-compose with five instances of Chrome */
-	    sh 'docker-compose up -d --scale chrome=5 --scale firefox=0'
-	}
-	
+    
+    /* Start docker-compose with five instances of Chrome */
+    stage('Start docker-compose') {	
+    	sh 'docker-compose up -d --scale chrome=5 --scale firefox=0'
+    }	
+    
+    /* This builds an image with all pytest selenium scripts in it */
     stage('Build image') {
-        /* This builds an image with all pytest selenium scripts in it */
-		def dockerfile = 'pytest.Dockerfile'
-        app = docker.build("pytest-with-src","-f ${dockerfile} ./")
+    		def dockerfile = 'pytest.Dockerfile'
+            app = docker.build("pytest-with-src","-f ${dockerfile} ./")
     }
-	
+    	
+    /* Execute the pytest script. Even on faliure proceed to next step */
     stage('Execute script') {
-		/* Execute the pytest script. On faliure proceed to next step */
-        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-            sh 'docker run --network="host" --rm -i -v ${WORKSPACE}/allure-results:/AllureReports pytest-with-src --executor "remote" --browser "chrome" .'
-        }
+            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                sh 'docker run --network="host" --rm -i -v ${WORKSPACE}/allure-results:/AllureReports pytest-with-src --executor "remote" --browser "chrome" .'
+            }
     }
-	
-	stage('Remove image') {
-        /* Delete the image which got created earlier */
-        sh 'docker rmi pytest-with-src -f'
+    	
+    /* Delete the image which got created earlier */
+    stage('Remove image') {
+            sh 'docker rmi pytest-with-src -f'
     }
-    
+       
+     
+    /* Tear down docker compose */
     stage('Teardown docker-compose') {
-		/* Tear down docker compose */
-        sh 'docker-compose down --rmi local'
+            sh 'docker-compose down --rmi local'
+    }
+  
+  
+    /* Generate Allure Report */
+    stage('Allure Report') {
+            allure includeProperties: false, jdk: '', results: [[path: 'allure-results']]
     }
     
-	stage('Allure Report') {
-        /* Generate Allure Report */
-        allure includeProperties: false, jdk: '', results: [[path: 'allure-results']]
-    }
 }
