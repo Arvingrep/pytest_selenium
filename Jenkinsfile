@@ -26,11 +26,11 @@ node {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
             
        if (isUnix()) {
-                sh 'docker run --network="host" --rm -i -v ${WORKSPACE}/allure-results:/AllureReports pytest-with-src -m sanity_test --executor "remote" --browser "chrome" .'
+                sh 'docker run --network="host" --rm -v ${WORKSPACE}/allure-results:/AllureReports pytest-with-src --executor "remote" --browser "chrome" .'
             }
         else {
                 /* Make sure you have shared the folder and set full permissions for this folder "%WORKSPACE%\\allure-results"*/
-                bat 'docker run --network="host" --rm -i -v "%WORKSPACE%\\allure-results":/AllureReports pytest-with-src -m sanity_test --executor "remote" --browser "chrome" .'
+                bat 'docker run --network="host" --rm -v "%WORKSPACE%\\allure-results":/AllureReports pytest-with-src --executor "remote" --browser "chrome" .'
             }
         }
     }
