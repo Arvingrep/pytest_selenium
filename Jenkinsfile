@@ -11,7 +11,7 @@ node {
         parallel(
           "Start Compose": {
     		/* Start docker-compose with five instances of Chrome */
-    	    cmd_exec('docker-compose up -d --scale chrome=1 --scale firefox=0')
+    	    cmd_exec('docker-compose up -d --scale chrome=5 --scale firefox=0')
           },
           "Build Image": {
             /* This builds an image with all pytest selenium scripts in it */
@@ -26,11 +26,11 @@ node {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
             
        if (isUnix()) {
-                sh 'docker run --network="host" --rm -i -v ${WORKSPACE}/allure-results:/AllureReports -e THREAD_COUNT=1 pytest-with-src -m sanity_test --executor "remote" --browser "chrome" .'
+                sh 'docker run --network="host" --rm -i -v ${WORKSPACE}/allure-results:/AllureReports pytest-with-src -m sanity_test --executor "remote" --browser "chrome" .'
             }
         else {
                 /* Make sure you have shared the folder and set full permissions for this folder "%WORKSPACE%\\allure-results"*/
-                bat 'docker run --network="host" --rm -i -v "%WORKSPACE%\\allure-results":/AllureReports -e THREAD_COUNT=1 pytest-with-src -m sanity_test --executor "remote" --browser "chrome" .'
+                bat 'docker run --network="host" --rm -i -v "%WORKSPACE%\\allure-results":/AllureReports pytest-with-src -m sanity_test --executor "remote" --browser "chrome" .'
             }
         }
     }
